@@ -1,0 +1,1 @@
+# allegro-csv-to-prestashop
