@@ -1,37 +1,37 @@
 <?php
 
-// Nazwa pliku CSV z danymi JSON z Allegro
+// Name of the CSV file with JSON data from Allegro
 $inputCsvFile = 'allegro.csv';
 
-// Nazwa pliku wyjściowego CSV
+// Name of the output CSV file
 $outputFileName = 'prestashop.csv';
 
-// Otwarcie pliku wejściowego CSV
+// Open the input CSV file
 $inputFileHandle = fopen($inputCsvFile, 'r');
 
-// Otwarcie pliku wyjściowego CSV
+// Open the output CSV file
 $outputFileHandle = fopen($outputFileName, 'w');
 
-// Dodanie BOM do pliku wyjściowego w celu poprawnego wyświetlania polskich znaków
+// Add BOM to the output file for correct display of Polish characters
 fprintf($outputFileHandle, chr(0xEF).chr(0xBB).chr(0xBF));
 
-// Przetwarzanie pliku CSV wiersz po wierszu
+// Process the CSV file row by row
 while (($row = fgetcsv($inputFileHandle, 0, ";")) !== FALSE) {
 
     $jsonColumn = $row[16];
 
     if ($jsonColumn) {
 
-        // Parsowanie danych JSON
+        // Parse the JSON data
         $jsonData = json_decode($jsonColumn, true);
         $htmlContent = '';
 
-        // Przetwarzanie sekcji JSON
+        // Process the JSON sections
         if (!empty($jsonData['sections'])) {
             foreach ($jsonData['sections'] as $section) {
-                // Przetwarzanie elementów w sekcji
+                // Process items in the section
                 foreach ($section['items'] as $item) {
-                    // Generowanie HTML na podstawie typu elementu
+                    // Generate HTML based on the item type
                     if ($item['type'] == 'IMAGE') {
                         $htmlContent .= '<img src="' . $item['url'] . '" alt="Image">';
                     } elseif ($item['type'] == 'TEXT') {
@@ -41,36 +41,36 @@ while (($row = fgetcsv($inputFileHandle, 0, ";")) !== FALSE) {
             }
         }
 
-        // Zastąpienie zawartości kolumny JSON wygenerowanym HTML
+        // Replace the content of the JSON column with the generated HTML
         $row[16] = $htmlContent;
     }
 
-    // Usunięcie zbędnych kolumn
+    // Remove unnecessary columns
     $columnsToUnset = [0, 1, 3, 4, 5, 6, 8, 9, 31, 32, 33, 34];
     foreach ($columnsToUnset as $colIndex) {
         unset($row[$colIndex]);
     }
 
-    // Ustawienie wartości w wybranych kolumnach
-    $row[7] = '1';  // Aktywność
-    $row[10] = preg_replace('/\([^)]*\)/', '', $row[10]);  // Usunięcie tekstu w nawiasach z nazwy kategorii
-    $row[10] = implode('|', array_map('trim', explode('>', $row[10])));  // Zmiana separatora kategorii
-    $row[30] = 'new';  // Status produktu
-    $row[37] = '1';  // Dostępność produktu
+    // Set values in selected columns
+    $row[7] = '1';  // Activity
+    $row[10] = preg_replace('/\([^)]*\)/', '', $row[10]);  // Remove text in parentheses from the category name
+    $row[10] = implode('|', array_map('trim', explode('>', $row[10])));  // Change the category separator
+    $row[30] = 'new';  // Product status
+    $row[37] = '1';  // Product availability
 
-    // Usunięcie niepotrzebnych kolumn od indeksu 17 do 29 i powyżej 37
+    // Remove unnecessary columns from index 17 to 29 and above 37
     foreach ($row as $index => $value) {
         if ($index > 37 || ($index >= 17 && $index <= 29)) {
             unset($row[$index]);
         }
     }
 
-    // Zapisanie przetworzonego wiersza do pliku wyjściowego
+    // Save the processed row to the output file
     fputcsv($outputFileHandle, $row, ';');
 }
 
-// Zamknięcie plików
+// Close the files
 fclose($inputFileHandle);
 fclose($outputFileHandle);
 
-echo 'Plik CSV został wygenerowany: ' . $outputFileName;
+echo 'The CSV file has been generated: ' . $outputFileName;
